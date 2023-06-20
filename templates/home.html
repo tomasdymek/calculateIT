@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="calculator">
+    <table>
+      <tr>
+        <td colspan="4">
+          <div id="result"></div> <!-- Okno z wynikiem -->
+        </td>
+      </tr>
+      <tr>
+        <td onclick="handleClick('C')">C</td>
+        <td onclick="handleClick('%')">%</td>
+        <td onclick="handleClick('/')">/</td>
+        <td onclick="handleClick('*')">*</td>
+      </tr>
+      <tr>
+        <td onclick="handleClick('7')">7</td>
+        <td onclick="handleClick('8')">8</td>
+        <td onclick="handleClick('9')">9</td>
+        <td onclick="handleClick('-')">-</td>
+      </tr>
+      <tr>
+        <td onclick="handleClick('4')">4</td>
+        <td onclick="handleClick('5')">5</td>
+        <td onclick="handleClick('6')">6</td>
+        <td onclick="handleClick('+')">+</td>
+      </tr>
+      <tr>
+        <td onclick="handleClick('1')">1</td>
+        <td onclick="handleClick('2')">2</td>
+        <td onclick="handleClick('3')">3</td>
+        <td rowspan="2" onclick="handleClick('=')">=</td>
+      </tr>
+      <tr>
+        <td onclick="handleClick('0')">0</td>
+        <td onclick="handleClick('Backspace')"><-</td>
+        <td onclick="handleClick(',')">.</td>
+      </tr>
+    </table>
+  </div>
+
+<script>
+  var display = ""; // Zmienna przechowująca aktualny wyświetlany tekst
+var lastClicked = ""; // Zmienna przechowująca informację o ostatnio klikniętym przycisku
+var isOperatorClicked = false; // Flaga informująca, czy symbol matematyczny został już wprowadzony
+var lastResult = null; // Zmienna przechowująca wynik ostatniego działania
+
+function handleClick(value) {
+  if (value === "=") {
+    // Jeśli kliknięto znak równości, wywołaj funkcję obliczającą wynik
+    calculateResult();
+  } else if (value === "C") {
+    // Jeśli kliknięto przycisk "C", wyczyść wyświetlacz
+    clearDisplay();
+  } else if (value === "Backspace" || value === "Delete") {
+    // Jeśli kliknięto przycisk Backspace lub Delete, cofnij ostatnią zmianę
+    if (display.length > 0) {
+      display = display.slice(0, -1);
+      if (isOperator(value)) {
+        isOperatorClicked = false;
+      }
+    }
+  } else {
+    // Sprawdź, czy można dodać wartość do wyświetlacza
+    if (canAddValue(value)) {
+      display += value;
+      if (isOperator(value)) {
+        isOperatorClicked = true;
+      } else {
+        isOperatorClicked = false;
+      }
+    }
+  }
+
+  lastClicked = value; // Zapamiętaj ostatnio kliknięty przycisk
+
+  // Zaktualizuj wyświetlacz
+  updateDisplay();
+}
+
+function canAddValue(value) {
+  if (display.length === 0 && isOperator(value)) {
+    return false; // Nie można dodać symbolu matematycznego jako pierwszego znaku
+  }
+
+  if (isOperatorClicked && isOperator(value)) {
+    return false; // Nie można dodać kolejnego symbolu matematycznego bezpośrednio po poprzednim
+  }
+
+  return true;
+}
+
+function isOperator(value) {
+  return /[+\-*/%]/.test(value);
+}
+
+function updateDisplay() {
+  // Znajdź element wyświetlacza na stronie
+  var displayElement = document.getElementById("result");
+
+  // Ustaw wartość wyświetlacza na aktualną wartość zmiennej "display"
+  displayElement.innerText = display;
+}
+
+function calculateResult() {
+  try {
+    // Wykonaj obliczenia wyrażenia zapisanego w zmiennej "display"
+    var result = eval(display);
+
+    if (lastResult !== null && lastClicked === "=") {
+      // Jeśli ostatnio kliknięto znak równości, dodaj wynik do poprzedniego wyniku
+      result = eval(lastResult + lastClicked + result);
+    }
+
+    // Zapamiętaj wynik jako ostatni wynik
+    lastResult = result;
+
+    // Ustaw wynik jako nową wartość wyświetlacza
+    display = result.toString();
+  } catch (error) {
+    // Jeśli wystąpił błąd podczas obliczeń, wyczyść wyświetlacz
+    display = "";
+  }
+
+  // Zaktualizuj wyświetlacz
+  updateDisplay();
+}
+
+function clearDisplay() {
+  // Wyczyść wyświetlacz
+  display = "";
+  isOperatorClicked = false;
+  lastClicked = "C"; // Zapamiętaj, że ostatnio kliknięto przycisk "C"
+  lastResult = null; // Wyczyść zapamiętany wynik
+
+  // Zaktualizuj wyświetlacz
+  updateDisplay();
+}
+
+function highlightButton(key) {
+  // Znajdź przycisk na podstawie naciśniętego klawisza
+  var button = document.querySelector(`td[onclick="handleClick('${key}')"]`);
+
+  if (button) {
+    // Dodaj klasę "highlight" do podświetlenia przycisku
+    button.classList.add("highlight");
+
+    // Usuń klasę "highlight" po 200 milisekundach
+    setTimeout(function () {
+      button.classList.remove("highlight");
+    }, 200);
+  }
+}
+
+// Obsługa zdarzenia keydown
+document.addEventListener("keydown", function (event) {
+  var key = event.key;
+
+  if (/[0-9]|,|\+|\-|\*|%|\//.test(key)) {
+    // Jeśli naciśnięty klawisz to cyfra, kropka lub operator matematyczny,
+    // dodaj go do aktualnego wyświetlacza
+    if (key === ",") key = "."; // Zamień przecinek na kropkę
+    handleClick(key);
+    highlightButton(key);
+  } else if (key === "Enter") {
+    // Jeśli naciśnięty klawisz to Enter, oblicz wynik
+    handleClick("=");
+    highlightButton("=");
+  } else if (key === "Escape" || key === "Delete") {
+    // Jeśli naciśnięty klawisz to Escape lub Delete, wyczyść wyświetlacz
+    handleClick("C");
+    highlightButton("C");
+  } else if (key === "Backspace") {
+    // Jeśli naciśnięty klawisz to Backspace, cofnij ostatnią zmianę
+    handleClick("Backspace");
+    highlightButton("Backspace");
+  }
+  });
+</script>
+
+
+
+
+
+{% endblock %}
