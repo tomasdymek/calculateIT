@@ -13,10 +13,9 @@ body {
 }
 
 .calculator td {
-  width: 25%; /* Zmieniono szerokość na 25% dla czterech kolumn */
+  width: 25%;
   font-size: 50px;
   background-color: #e0e0e0;
-  /*border-radius: 50%; !* Zmieniono na 50% dla efektu koła *!*/
   cursor: pointer;
 }
 
